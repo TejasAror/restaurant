@@ -5,13 +5,8 @@ import { LoginInputState, userLoginSchema } from "@/schema/userSchema";
 import { useUserStore } from "@/store/useUserStore";
 
 import { Loader2, LockKeyhole, Mail } from "lucide-react";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-// type LoginInputState = {
-//     email:string;
-//     password:string;
-// }
 
 const Login = () => {
   const [input, setInput] = useState<LoginInputState>({
@@ -19,6 +14,7 @@ const Login = () => {
     password: "",
   });
   const [errors, setErrors] = useState<Partial<LoginInputState>>({});
+  const [formError, setFormError] = useState("");
   const { loading, login } = useUserStore();
   const navigate = useNavigate();
 
@@ -26,6 +22,7 @@ const Login = () => {
     const { name, value } = e.target;
     setInput({ ...input, [name]: value });
   };
+
   const loginSubmitHandler = async (e: FormEvent) => {
     e.preventDefault();
     const result = userLoginSchema.safeParse(input);
@@ -35,10 +32,13 @@ const Login = () => {
       return;
     }
     try {
+      setErrors({});
+      setFormError("");
       await login(input);
       navigate("/");
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      setFormError(error?.message || "Login failed. Please try again.");
     }
   };
 
@@ -51,6 +51,7 @@ const Login = () => {
         <div className="mb-4">
           <h1 className="font-bold text-2xl">TejasEats</h1>
         </div>
+
         <div className="mb-4">
           <div className="relative">
             <Input
@@ -60,10 +61,14 @@ const Login = () => {
               value={input.email}
               onChange={changeEventHandler}
               className="pl-10 focus-visible:ring-1"
+              aria-invalid={!!errors.email}
+              aria-describedby="email-error"
             />
             <Mail className="absolute inset-y-2 left-2 text-gray-500 pointer-events-none" />
-            {errors && (
-              <span className="text-xs text-red-500">{errors.email}</span>
+            {errors.email && (
+              <span id="email-error" className="text-xs text-red-500">
+                {errors.email}
+              </span>
             )}
           </div>
         </div>
@@ -77,30 +82,37 @@ const Login = () => {
               value={input.password}
               onChange={changeEventHandler}
               className="pl-10 focus-visible:ring-1"
+              aria-invalid={!!errors.password}
+              aria-describedby="password-error"
             />
             <LockKeyhole className="absolute inset-y-2 left-2 text-gray-500 pointer-events-none" />
-            {errors && (
-              <span className="text-xs text-red-500">{errors.password}</span>
+            {errors.password && (
+              <span id="password-error" className="text-xs text-red-500">
+                {errors.password}
+              </span>
             )}
           </div>
         </div>
+
+        {formError && (
+          <p className="text-red-500 text-sm mb-4 text-center">{formError}</p>
+        )}
+
         <div className="mb-10">
-          {loading ? (
-            <Button
-              disabled
-              className="w-full bg-orange-500 hover:bg-hoverOrange"
-            >
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Please wait
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              className="w-full bg-orange-500 hover:bg-hoverOrange"
-            >
-              Login
-            </Button>
-          )}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-orange-500 hover:bg-hoverOrange"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Please wait
+              </>
+            ) : (
+              "Login"
+            )}
+          </Button>
           <div className="mt-4">
             <Link
               to="/forgot-password"
@@ -110,10 +122,11 @@ const Login = () => {
             </Link>
           </div>
         </div>
+
         <Separator />
         <p className="mt-2">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-blue-500">
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="text-blue-500 hover:underline">
             Signup
           </Link>
         </p>

@@ -45,7 +45,6 @@ const VerifyEmail = () => {
     e.preventDefault();
     const verificationCode = otp.join("");
     if (verificationCode.length < 6) {
-      // Optionally add error handling here
       alert("Please enter the full 6-digit code.");
       return;
     }
@@ -54,7 +53,6 @@ const VerifyEmail = () => {
       navigate("/");
     } catch (error) {
       console.error(error);
-      // Optionally show an error message to user
     }
   };
 
@@ -72,7 +70,9 @@ const VerifyEmail = () => {
             {otp.map((letter, idx) => (
               <Input
                 key={idx}
-                ref={(el) => (inputRef.current[idx] = el)}
+                ref={(el) => {
+                  inputRef.current[idx] = el;
+                }}
                 type="text"
                 maxLength={1}
                 inputMode="text"

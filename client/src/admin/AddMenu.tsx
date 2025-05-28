@@ -11,12 +11,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useState, useEffect } from "react";
 import EditMenu from "./EditMenu";
 import { MenuFormSchema, menuSchema } from "@/schema/menuSchema";
 import { useMenuStore } from "@/store/useMenuStore";
 import { useRestaurantStore } from "@/store/useRestaurantStore";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
 const AddMenu = () => {
@@ -29,7 +28,7 @@ const AddMenu = () => {
   const [open, setOpen] = useState<boolean>(false);
   const [editOpen, setEditOpen] = useState<boolean>(false);
   const [selectedMenu, setSelectedMenu] = useState<any>();
-  const [error, setError] = useState<Partial<MenuFormSchema>>({});
+  const [error, setError] = useState<Partial<Record<keyof MenuFormSchema, string>>>({});
 
   const { loading, createMenu } = useMenuStore();
   const { restaurant, getRestaurant, addMenuToRestaurant } = useRestaurantStore();
@@ -45,10 +44,11 @@ const AddMenu = () => {
 
   const submitHandler = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const result = menuSchema.safeParse(input);
     if (!result.success) {
       const fieldErrors = result.error.formErrors.fieldErrors;
-      setError(fieldErrors as Partial<MenuFormSchema>);
+      setError(fieldErrors as Partial<Record<keyof MenuFormSchema, string>>);
       return;
     }
 
@@ -62,13 +62,11 @@ const AddMenu = () => {
       }
 
       const createdMenu = await createMenu(formData);
-      
+
       if (createdMenu) {
         addMenuToRestaurant(createdMenu);
         toast.success("Menu created successfully");
-
-        // ✅ FIX: do not check setOpen for truthiness
-        setOpen(false);
+        setOpen(false); // <-- just call it, no if check
 
         setInput({
           name: "",
@@ -158,13 +156,13 @@ const AddMenu = () => {
                   onChange={(e) =>
                     setInput({
                       ...input,
-                      image: e.target.files?.[0] || undefined,
+                      image: e.target.files?.[0], // no cast needed if type updated
                     })
                   }
                 />
                 {error.image && (
                   <span className="text-xs font-medium text-red-600">
-                    {error.image as string}
+                    {error.image}
                   </span>
                 )}
               </div>
@@ -175,9 +173,7 @@ const AddMenu = () => {
                     Please wait
                   </Button>
                 ) : (
-                  <Button className="bg-orange-500 hover:bg-hoverOrange">
-                    Submit
-                  </Button>
+                  <Button className="bg-orange-500 hover:bg-hoverOrange">Submit</Button>
                 )}
               </DialogFooter>
             </form>
@@ -197,10 +193,8 @@ const AddMenu = () => {
                 />
               )}
               <div className="flex-1">
-                <h1 className="text-lg font-semibold text-gray-800">
-                  {menu.name}
-                </h1>
-                <p className="text-sm tex-gray-600 mt-1">{menu.description}</p>
+                <h1 className="text-lg font-semibold text-gray-800">{menu.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">{menu.description}</p>
                 <h2 className="text-md font-semibold mt-2">
                   Price: <span className="text-[#D19254]">{menu.price}</span>
                 </h2>
@@ -219,16 +213,10 @@ const AddMenu = () => {
           </div>
         ))
       ) : (
-        <div className="mt-6 text-center text-gray-500">
-          No menus available. Add your first menu!
-        </div>
+        <div className="mt-6 text-center text-gray-500">No menus available. Add your first menu!</div>
       )}
 
-      <EditMenu
-        selectedMenu={selectedMenu}
-        editOpen={editOpen}
-        setEditOpen={setEditOpen}
-      />
+      <EditMenu selectedMenu={selectedMenu} editOpen={editOpen} setEditOpen={setEditOpen} />
     </div>
   );
 };

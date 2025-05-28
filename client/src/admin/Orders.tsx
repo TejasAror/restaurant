@@ -8,28 +8,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRestaurantStore } from "@/store/useRestaurantStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Orders = () => {
   const { restaurantOrder, getRestaurantOrders, updateRestaurantOrder } =
     useRestaurantStore();
-  const [loading, setLoading] = useState(false); // Track loading state
 
-  // Function to handle status change
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+
   const handleStatusChange = async (id: string, status: string) => {
-    setLoading(true); // Start loading state
+    setUpdatingOrderId(id);
     try {
-      await updateRestaurantOrder(id, status); // Call API to update the order status
-      getRestaurantOrders(); // Fetch updated orders
+      await updateRestaurantOrder(id, status);
+      await getRestaurantOrders(); // Fetch updated orders
     } catch (error) {
       console.error("Error updating order status", error);
     } finally {
-      setLoading(false); // Stop loading state
+      setUpdatingOrderId(null);
     }
   };
 
   useEffect(() => {
-    getRestaurantOrders(); // Fetch orders when component mounts
+    if (!hasFetchedRef.current) {
+      getRestaurantOrders();
+      hasFetchedRef.current = true;
+    }
   }, [getRestaurantOrders]);
 
   return (
@@ -38,10 +42,9 @@ const Orders = () => {
         Orders Overview
       </h1>
       <div className="space-y-8">
-        {/* Displaying Restaurant Orders */}
         {restaurantOrder.map((order) => (
           <div
-            key={order._id} // Added key for better optimization
+            key={order._id}
             className="flex flex-col md:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
           >
             <div className="flex-1 mb-6 sm:mb-0">
@@ -65,7 +68,7 @@ const Orders = () => {
                 onValueChange={(newStatus) =>
                   handleStatusChange(order._id, newStatus)
                 }
-                value={order.status} // Binding current status value to Select
+                value={order.status}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Status" />
@@ -78,23 +81,21 @@ const Orders = () => {
                       "Preparing",
                       "OutForDelivery",
                       "Delivered",
-                    ].map((status, index) => (
-                      <SelectItem key={index} value={status.toLowerCase()}>
+                    ].map((status) => (
+                      <SelectItem key={status} value={status}>
                         {status}
                       </SelectItem>
                     ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
+              {updatingOrderId === order._id && (
+                <p className="text-sm text-blue-500 mt-2">Updating...</p>
+              )}
             </div>
           </div>
         ))}
       </div>
-      {loading && (
-        <div className="absolute top-0 left-0 right-0 bottom-0 bg-black opacity-50 flex justify-center items-center">
-          <span className="text-white">Updating...</span>
-        </div>
-      )}
     </div>
   );
 };

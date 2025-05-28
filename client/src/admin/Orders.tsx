@@ -10,6 +10,16 @@ import {
 import { useRestaurantStore } from "@/store/useRestaurantStore";
 import { useEffect, useRef, useState } from "react";
 
+interface Order {
+  _id: string;
+  deliveryDetails: {
+    name: string;
+    address: string;
+  };
+  totalAmount: number;
+  status: string;
+}
+
 const Orders = () => {
   const { restaurantOrder, getRestaurantOrders, updateRestaurantOrder } =
     useRestaurantStore();
@@ -21,7 +31,7 @@ const Orders = () => {
     setUpdatingOrderId(id);
     try {
       await updateRestaurantOrder(id, status);
-      await getRestaurantOrders(); // Fetch updated orders
+      await getRestaurantOrders(); // refresh orders after update
     } catch (error) {
       console.error("Error updating order status", error);
     } finally {
@@ -42,7 +52,7 @@ const Orders = () => {
         Orders Overview
       </h1>
       <div className="space-y-8">
-        {restaurantOrder.map((order) => (
+        {restaurantOrder.map((order: Order) => (
           <div
             key={order._id}
             className="flex flex-col md:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
@@ -57,7 +67,7 @@ const Orders = () => {
               </p>
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 <span className="font-semibold">Total Amount: </span>
-                {order.totalAmount / 100}
+                {(order.totalAmount / 100).toFixed(2)}
               </p>
             </div>
             <div className="w-full sm:w-1/3">

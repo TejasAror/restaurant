@@ -25,13 +25,16 @@ const Cart = () => {
     clearCart,
   } = useCartStore();
 
-  const totalAmount = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalAmount = cart.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
 
   return (
-    <div className="flex flex-col max-w-7xl mx-auto my-10">
+    <div className="flex flex-col max-w-7xl mx-auto my-10 px-4">
       <div className="flex justify-end mb-4">
         {cart.length > 0 && (
-          <Button variant="link" onClick={clearCart}>
+          <Button variant="link" onClick={clearCart} aria-label="Clear all items">
             Clear All
           </Button>
         )}
@@ -48,40 +51,44 @@ const Cart = () => {
             <TableHead className="text-right">Remove</TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {cart.map((item: CartItem) => (
             <TableRow key={item._id}>
               <TableCell>
                 <Avatar>
                   <AvatarImage src={item.image} alt={item.name} />
-                  <AvatarFallback>CN</AvatarFallback>
+                  <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </TableCell>
               <TableCell>{item.name}</TableCell>
               <TableCell>₹{item.price}</TableCell>
               <TableCell>
-                <div className="w-fit flex items-center rounded-full border border-gray-100 dark:border-gray-800 shadow-md">
+                <div className="flex items-center rounded-full border border-gray-100 dark:border-gray-800 shadow-md w-fit">
                   <Button
                     onClick={() => decrementQuantity(item._id)}
                     size="icon"
                     variant="outline"
                     className="rounded-full bg-gray-200"
+                    aria-label={`Decrease quantity of ${item.name}`}
                   >
                     <Minus />
                   </Button>
                   <Button
                     size="icon"
-                    className="font-bold border-none"
-                    disabled
                     variant="outline"
+                    disabled
+                    className="font-bold border-none pointer-events-none"
+                    aria-label={`Quantity of ${item.name}`}
                   >
                     {item.quantity}
                   </Button>
                   <Button
                     onClick={() => incrementQuantity(item._id)}
                     size="icon"
-                    className="rounded-full bg-orange-500 hover:bg-hoverOrange"
                     variant="outline"
+                    className="rounded-full bg-orange-500 hover:bg-hoverOrange"
+                    aria-label={`Increase quantity of ${item.name}`}
                   >
                     <Plus />
                   </Button>
@@ -93,6 +100,7 @@ const Cart = () => {
                   size="sm"
                   variant="destructive"
                   onClick={() => removeFromCart(item._id)}
+                  aria-label={`Remove ${item.name} from cart`}
                 >
                   <Trash2 size={16} />
                 </Button>
@@ -100,6 +108,7 @@ const Cart = () => {
             </TableRow>
           ))}
         </TableBody>
+
         <TableFooter>
           <TableRow className="text-xl font-bold">
             <TableCell colSpan={5}>Total</TableCell>
@@ -113,6 +122,7 @@ const Cart = () => {
           <Button
             onClick={() => setOpen(true)}
             className="bg-orange-500 hover:bg-hoverOrange"
+            aria-label="Proceed to checkout"
           >
             Proceed To Checkout
           </Button>

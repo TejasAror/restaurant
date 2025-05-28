@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import FilterPage from "./FilterPage";
 import { Input } from "./ui/input";
-import {  useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Globe, MapPin, X } from "lucide-react";
@@ -14,19 +14,24 @@ import { useRestaurantStore } from "@/store/useRestaurantStore";
 
 const SearchPage = () => {
   const params = useParams();
+  const { appliedFilter, searchRestaurant, searchedRestaurant, loading } = useRestaurantStore();
+
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [appliedFilter, setAppliedFilter] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const { searchRestaurant, searchedRestaurant } = useRestaurantStore();
 
   const resultCount = searchedRestaurant?.data?.length ?? 0;
+
+  // Trigger search whenever params.text, searchQuery, or appliedFilter change
+  useEffect(() => {
+    if (!params.text) return;
+    searchRestaurant(params.text, searchQuery, appliedFilter);
+  }, [params.text, searchQuery, appliedFilter, searchRestaurant]);
 
   return (
     <div className="max-w-7xl mx-auto my-10">
       <div className="flex flex-col md:flex-row justify-between gap-10">
         <FilterPage />
         <div className="flex-1">
-          {/* Search Input Field  */}
+          {/* Search Input Field */}
           <div className="flex items-center gap-2">
             <Input
               type="text"
@@ -35,17 +40,17 @@ const SearchPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Button
-              onClick={() => searchRestaurant(params.text!, searchQuery, appliedFilter)}
+              onClick={() => searchRestaurant(params.text ?? "", searchQuery, appliedFilter)}
               className="bg-orange-500 hover:bg-hoverOrange"
             >
               Search
             </Button>
           </div>
-          {/* Searched Items display here  */}
+          {/* Searched Items display here */}
           <div>
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-2 my-3">
               <h1 className="font-medium text-lg">
-                ({resultCount}) Search result found
+                ({resultCount}) Search result{resultCount !== 1 ? "s" : ""} found
               </h1>
               <div className="flex flex-wrap gap-2 mb-4 md:mb-0">
                 {appliedFilter.map((selectedFilter: string, idx: number) => (
@@ -56,10 +61,12 @@ const SearchPage = () => {
                     >
                       {selectedFilter}
                     </Badge>
+                    {/* Removing a filter badge updates store's appliedFilter */}
                     <X
                       onClick={() =>
-                        setAppliedFilter((prev) =>
-                          prev.filter((item) => item !== selectedFilter)
+                        // Call store function to remove filter (implement in your store if not present)
+                        useRestaurantStore.getState().setAppliedFilter(
+                          appliedFilter.filter((item) => item !== selectedFilter)
                         )
                       }
                       size={16}
@@ -69,12 +76,12 @@ const SearchPage = () => {
                 ))}
               </div>
             </div>
-            {/* Restaurant Cards  */}
+            {/* Restaurant Cards */}
             <div className="grid md:grid-cols-3 gap-4">
               {loading ? (
                 <SearchPageSkeleton />
               ) : !loading && resultCount === 0 ? (
-                <NoResultFound searchText={params.text!} />
+                <NoResultFound searchText={params.text ?? ""} />
               ) : (
                 searchedRestaurant?.data?.map((restaurant: Restaurant) => (
                   <Card
@@ -85,7 +92,7 @@ const SearchPage = () => {
                       <AspectRatio ratio={16 / 6}>
                         <img
                           src={restaurant.imageUrl}
-                          alt=""
+                          alt={restaurant.restaurantName}
                           className="w-full h-full object-cover"
                         />
                       </AspectRatio>
@@ -102,15 +109,13 @@ const SearchPage = () => {
                       <div className="mt-2 gap-1 flex items-center text-gray-600 dark:text-gray-400">
                         <MapPin size={16} />
                         <p className="text-sm">
-                          City:{" "}
-                          <span className="font-medium">{restaurant.city}</span>
+                          City: <span className="font-medium">{restaurant.city}</span>
                         </p>
                       </div>
                       <div className="mt-2 gap-1 flex items-center text-gray-600 dark:text-gray-400">
                         <Globe size={16} />
                         <p className="text-sm">
-                          Country:{" "}
-                          <span className="font-medium">{restaurant.country}</span>
+                          Country: <span className="font-medium">{restaurant.country}</span>
                         </p>
                       </div>
                       <div className="flex gap-2 mt-4 flex-wrap">
@@ -191,7 +196,7 @@ const NoResultFound = ({ searchText }: { searchText: string }) => {
         with a different term.
       </p>
       <Link to="/">
-        <Button className="mt-4 bg-orange-500 hover:bg-orangeHover">
+        <Button className="mt-4 bg-orange-500 hover:bg-hoverOrange">
           Go Back to Home
         </Button>
       </Link>
